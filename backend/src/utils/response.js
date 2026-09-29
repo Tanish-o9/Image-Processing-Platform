@@ -10,6 +10,19 @@ const successResponse = (
         data
     });
 };
+
+const errorResponse = (
+    res,
+    statusCode,
+    message
+) => {
+    return res.status(statusCode).json({
+        success: false,
+        message
+    });
+};
+
 module.exports = {
-    successResponse
+    successResponse,
+    errorResponse
 };
