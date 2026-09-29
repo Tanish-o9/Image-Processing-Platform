@@ -558,7 +558,10 @@ def main():
     global needs_update, ai_result
 
     demo_dir = os.path.dirname(os.path.abspath(__file__))
-    input_path = os.path.join(demo_dir, "input.jpg")
+    if len(sys.argv) > 1:
+        input_path = os.path.abspath(sys.argv[1])
+    else:
+        input_path = os.path.join(demo_dir, "input.jpg")
     output_dir = os.path.join(demo_dir, "outputs")
 
     os.makedirs(output_dir, exist_ok=True)
@@ -610,6 +613,15 @@ def main():
                 canvas = draw_ui(current_preview, param_dict.get("status_msg", ""))
                 cv2.imshow(WINDOW_NAME, canvas)
                 needs_update = False
+
+            try:
+                if cv2.getWindowProperty(WINDOW_NAME, cv2.WND_PROP_VISIBLE) < 1:
+                    if not saved:
+                        cv2.imwrite(final_output_path, current_preview)
+                        print(f"✓ Final output saved to: {final_output_path}")
+                    break
+            except Exception:
+                pass
 
             key = cv2.waitKey(30) & 0xFF
             if key in [ord("q"), ord("Q"), 27]:  # Q or ESC
