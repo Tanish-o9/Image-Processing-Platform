@@ -1,10 +1,7 @@
 const cloudinary = require("../config/cloudinary");
 const streamifier = require("streamifier");
 
-const uploadToCloudinary = (
-    buffer,
-    userId
-) => {
+const uploadToCloudinary = (buffer, userId) => {
     return new Promise((resolve, reject) => {
         const uploadStream =
             cloudinary.uploader.upload_stream(
@@ -30,9 +27,7 @@ const uploadToCloudinary = (
     });
 };
 
-const deleteFromCloudinary = async (
-    publicId
-) => {
+const deleteFromCloudinary = async (publicId) => {
     return cloudinary.uploader.destroy(
         publicId,
         {

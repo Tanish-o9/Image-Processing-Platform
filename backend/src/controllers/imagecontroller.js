@@ -1,4 +1,4 @@
-const Image = require("../models/imagemodel");
+const Image = require("../models/image");
 
 const {
     uploadToCloudinary,
@@ -15,13 +15,16 @@ const uploadImage = async (req,res,next) => {
                 message: "Image is required"
             });
         }
+        // Get authenticated user's ID from JWT
+        const userId = req.user._id;
+
         const result =
             await uploadToCloudinary(
                 req.file.buffer,
-                req.user._id.toString()
+                userId.toString()
             );
         const image = await Image.create({
-            user: req.user._id,
+            user: userId,
             originalName:req.file.originalname,
             cloudinaryPublicId:result.public_id,
             cloudinaryUrl:result.url,
@@ -62,10 +65,8 @@ const getImageById = async (req,res,next) => {
                 message: "Image not found"
             });
         }
-
         return res.status(200).json({
             success: true,
-
             data: {
                 image
             }
