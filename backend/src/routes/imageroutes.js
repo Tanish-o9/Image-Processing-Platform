@@ -12,7 +12,7 @@ const {
 const { protect } = require("../middleware/authmiddleware");
 const upload = require("../middleware/uploadmiddleware");
 
-router.post("/upload",upload.single("image"),uploadImage);
+router.post("/upload",protect,upload.single("image"),uploadImage);
 
 router.get("/getimage/:imageId",protect, getImageById);
 
