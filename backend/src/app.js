@@ -5,6 +5,7 @@ const helmet = require("helmet");
 const morgan = require("morgan");
 const authRoutes =require("./routes/authroutes");
 const imageRoutes =require("./routes/imageroutes");
+const historyRoutes =require("./routes/historyroutes");
 const {notFound,errorHandler} = require("./middleware/errormiddleware");
 
 
@@ -40,6 +41,8 @@ app.get("/", (req, res) => {
 app.use("/api/auth",authRoutes);
 // image route
 app.use("/api/images",imageRoutes);
+// history route
+app.use("/api/history",historyRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
