@@ -26,25 +26,25 @@ const sendOtpEmail = async ({
     let description;
     if (purpose === "verify") {
         subject =
-            "Verify your PhotuuuRise account";
+            "Verify your ImageRise account";
         heading =
             "Email Verification";
         description =
-            "Use the OTP below to verify your PhotuuRise account.";
+            "Use the OTP below to verify your ImageRise account.";
     } else if (purpose === "reset") {
         subject =
-            "Reset your PhotuuuRise password";
+            "Reset your ImageRise password";
         heading =
             "Password Reset";
         description =
-            "Use the OTP below to reset your PhotuuRise password.";
+            "Use the OTP below to reset your ImageRise password.";
     } else {
         throw new Error(
             "Invalid email purpose"
         );
     }
     const mailOptions = {
-        from: `"PhotuuuRise" <${process.env.MAIL_FROM}>`,
+        from: `"ImageRise" <${process.env.MAIL_FROM}>`,
         to,
         subject,
         text: `
@@ -58,7 +58,7 @@ This OTP will expire in ${
 If you did not request this, please ignore this email.
 
 Regards,
-PhotuuuRise Team
+ImageRise Team
         `,
 
         html: `
@@ -96,7 +96,7 @@ PhotuuuRise Team
 
     <p>
         Regards,<br>
-        PhotuuuRise Team
+        ImageRise Team
     </p>
 
 </body>

@@ -1,6 +1,6 @@
 # 🖼️ Image Processing Platform — Backend API
 
-Welcome to the backend service for the **Image Processing Platform**. This service provides a RESTful API powering user authentication, image uploading/processing via Cloudinary, and image history management using Express and MongoDB.
+Welcome to the backend service for the **Image Processing Platform**. This service provides a RESTful API powering user authentication, image uploading/management via Cloudinary, image processing & ML-powered analysis/recommendations via an external ML microservice, and image history management using Express and MongoDB.
 
 ---
 
@@ -15,6 +15,7 @@ Welcome to the backend service for the **Image Processing Platform**. This servi
   - [Health Check](#health-check)
   - [Authentication (`/api/auth`)](#authentication-apiauth)
   - [Image Management (`/api/images`)](#image-management-apiimages)
+  - [ML & Image Analysis (`/api/analysis`)](#ml--image-analysis-apianalysis)
   - [History Management (`/api/history`)](#history-management-apihistory)
 - [Available Scripts](#-available-scripts)
 
@@ -32,6 +33,7 @@ Welcome to the backend service for the **Image Processing Platform**. This servi
   - Cross-Origin Resource Sharing (`cors`)
   - Brute Force & Rate Limiting (`express-rate-limit`)
 - **File Uploads & Media Storage:** [Multer](https://github.com/expressjs/multer) & [Cloudinary SDK](https://cloudinary.com/) (with `streamifier`)
+- **HTTP Client / Microservice Communication:** [Axios](https://axios-http.com/) (for integrating with the ML service)
 - **Mailing:** [Nodemailer](https://nodemailer.com/) (for OTP email verification & password resets)
 - **Validation:** `express-validator` & `zod`
 - **Logging:** `morgan`
@@ -53,9 +55,10 @@ backend/
     │   ├── db.js         # MongoDB connection setup
     │   └── cloudinary.js # Cloudinary SDK credentials configuration
     ├── controllers/
-    │   ├── authcontroller.js    # Logic for sign up, sign in, OTP, and password reset
-    │   ├── imagecontroller.js   # Logic for image upload, retrieval, export, and deletion
-    │   └── historycontroller.js # Logic for retrieving and clearing image activity logs
+    │   ├── authcontroller.js       # Logic for sign up, sign in, OTP, and password reset
+    │   ├── imagecontroller.js      # Logic for image upload, retrieval, export, and deletion
+    │   ├── historycontroller.js    # Logic for retrieving and clearing image activity logs
+    │   └── analysiscontroller.js   # Logic for ML health, processing, analysis, and recommendations
     ├── middleware/
     │   ├── authmiddleware.js        # JWT verification (`protect` guard)
     │   ├── errormiddleware.js       # Centralized 404 and 500 error handlers
@@ -64,12 +67,16 @@ backend/
     │   └── validationmiddleware.js  # Validation result evaluator
     ├── models/
     │   ├── user.js       # User schema (credentials, OTP fields, email verification)
-    │   └── image.js      # Image metadata schema (Cloudinary ID/URL, size, format, status)
+    │   └── image.js      # Image metadata schema (Cloudinary ID/URL, size, format, status, processingResult, analysisResult)
     ├── routes/
-    │   ├── authroutes.js    # Routes mounted on /api/auth
-    │   ├── imageroutes.js   # Routes mounted on /api/images
-    │   └── historyroutes.js # Routes mounted on /api/history
-    ├── services/         # Reusable business logic (e.g., mail sending, Cloudinary uploads)
+    │   ├── authroutes.js       # Routes mounted on /api/auth
+    │   ├── imageroutes.js      # Routes mounted on /api/images
+    │   ├── historyroutes.js    # Routes mounted on /api/history
+    │   └── analysisroutes.js   # Routes mounted on /api/analysis
+    ├── services/
+    │   ├── mailservice.js              # Reusable mail sending (OTP verification & reset)
+    │   ├── mlservice.js                # Microservice communication with external ML service
+    │   └── imageprocessingservice.js   # Workflow orchestrating image status & ML processing
     ├── utils/            # Helper utilities and formatters
     └── validations/      # Express-validator schemas for incoming requests
 ```
@@ -83,6 +90,7 @@ Before running the backend, make sure you have:
 2. A running **MongoDB** instance (locally or a free [MongoDB Atlas](https://www.mongodb.com/atlas) cluster).
 3. A free **Cloudinary** account for image hosting and processing credentials.
 4. An **SMTP / Email service** (e.g., Gmail App Password, Mailtrap, or SendGrid) for sending OTP emails.
+5. An **ML Service** running (or reachable URL) for image processing and analysis.
 
 ---
 
@@ -124,7 +132,7 @@ Your `.env` file must define the following variables:
 
 | Variable | Description | Example / Note |
 |---|---|---|
-| `MONGO_URI` | MongoDB connection string | `mongodb+srv://<user>:<password>@cluster.mongodb.net/imageforge` |
+| `MONGO_URI` | MongoDB connection string | `mongodb+srv://<user>:<password>@cluster.mongodb.net/imagerise` |
 | `CLIENT_URL` | Frontend URL allowed by CORS | `http://localhost:5173` |
 | `JWT_SECRET` | Secret key for signing JWT tokens | Strong random string |
 | `JWT_EXPIRES_IN` | Token expiration period | `7d` |
@@ -137,7 +145,8 @@ Your `.env` file must define the following variables:
 | `MAIL_SECURE` | Use TLS/SSL | `false` (for 587) or `true` (for 465) |
 | `MAIL_USER` | SMTP username / email address | `your-email@example.com` |
 | `MAIL_PASSWORD` | SMTP password / App password | `your-app-password` |
-| `MAIL_FROM` | Sender display name & email | `"ImageForge" <no-reply@imageforge.com>` |
+| `MAIL_FROM` | Sender display name & email | `"ImageRise" <no-reply@imagerise.com>` |
+| `ML_BASE_URL` | Base URL of the ML microservice | `http://localhost:8000` |
 
 ---
 
@@ -178,6 +187,17 @@ Base URL: `http://localhost:3000`
 | `GET` | `/api/images/getimage/:imageId` | Bearer Token | Fetch details of a specific uploaded image | URL param `:imageId` |
 | `DELETE`| `/api/images/deleteimage/:imageId` | Bearer Token | Remove image from Cloudinary and DB | URL param `:imageId` |
 | `POST` | `/api/images/export/:id` | Bearer Token | Export processed image | URL param `:id` |
+
+---
+
+### ML & Image Analysis (`/api/analysis`)
+
+| Method | Endpoint | Auth | Description | Payload / Body |
+|---|---|---|---|---|
+| `GET` | `/api/analysis/health` | Public | Check health status of the ML service | *None* |
+| `POST` | `/api/analysis/process` | Bearer Token | Process a stored image via ML service (updates image status and results) | `{ "imageId": "<IMAGE_ID>", ...options }` |
+| `POST` | `/api/analysis/analyze` | Bearer Token | Perform direct analysis on image data via ML service | `{ ...analysisOptions }` |
+| `POST` | `/api/analysis/recommend` | Bearer Token | Get optimization / enhancement recommendations from ML service | `{ ...recommendOptions }` |
 
 ---
 

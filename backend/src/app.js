@@ -6,6 +6,7 @@ const morgan = require("morgan");
 const authRoutes =require("./routes/authroutes");
 const imageRoutes =require("./routes/imageroutes");
 const historyRoutes =require("./routes/historyroutes");
+const analysisRoutes =require("./routes/analysisroutes");
 const {notFound,errorHandler} = require("./middleware/errormiddleware");
 
 
@@ -43,6 +44,8 @@ app.use("/api/auth",authRoutes);
 app.use("/api/images",imageRoutes);
 // history route
 app.use("/api/history",historyRoutes);
+// ml routes
+app.use("/api/analysis", analysisRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
