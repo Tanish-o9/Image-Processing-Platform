@@ -14,32 +14,39 @@ class WelcomeScreen extends StatelessWidget {
           child: Column(
             children: [
               const SizedBox(height: 20),
-              Image.asset('assets/images/logo.png', width: 90, height: 90),
+              Image.asset('assets/images/logo.png', width: 150, height: 150),
               const SizedBox(height: 16),
               RichText(
                 text: const TextSpan(
-                  style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 42, fontWeight: FontWeight.bold),
                   children: [
                     TextSpan(text: 'Image', style: TextStyle(color: Colors.black)),
-                    TextSpan(text: 'Forge', style: TextStyle(color: Color(0xFF6255FC))),
+                    TextSpan(text: 'Rise', style: TextStyle(color: Color(0xFF6255FC))),
                   ],
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
               const Text(
                 'Ai-Powered Image Processing & Analysis',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w500),
+                style: TextStyle(
+                  color: Colors.black87,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 20,
+                ),
               ),
               const SizedBox(height: 12),
               const Text(
                 'Transform your images with the power of AI. Edit, enhance, analyze and discover more.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey),
+                style: TextStyle(color: Colors.grey, fontSize: 18, height: 1.4),
               ),
-              const Spacer(),
-              Image.asset('assets/images/welcome_collage.png', height: 220),
-              const Spacer(),
+              const SizedBox(height: 16),
+              // Takes whatever space is left, so nothing can overflow
+              Expanded(
+                child: Image.asset('assets/images/welcome_collage.png', width: 500, height: 500,),
+              ),
+              const SizedBox(height: 16),
               GradientButton(
                 text: 'Get Started',
                 onPressed: () {

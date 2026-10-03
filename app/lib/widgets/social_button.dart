@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
 class SocialButton extends StatelessWidget {
-  final String iconPath;
+  final String iconPath;  //final- value can be assigned only once
   final String label;
-  final VoidCallback onPressed;
+  final VoidCallback onPressed;  //voidcallback- function with no arguments and no return value
 
-  const SocialButton({
+  const SocialButton({  //const- compile-time constant constructor
     super.key,
     required this.iconPath,
     required this.label,
