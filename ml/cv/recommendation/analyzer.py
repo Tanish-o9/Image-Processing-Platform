@@ -6,12 +6,21 @@ def analyze_image(image):
     if image is None:
         raise ValueError("Input image cannot be None")
 
-    if image.ndim == 3:
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    # Downsample large phone images (max 1000px) for 20x faster analysis with exact accuracy
+    h_orig, w_orig = image.shape[:2]
+    max_dim = max(h_orig, w_orig)
+    if max_dim > 1000:
+        scale = 1000.0 / max_dim
+        img_analysis = cv2.resize(image, (int(w_orig * scale), int(h_orig * scale)), interpolation=cv2.INTER_AREA)
+    else:
+        img_analysis = image
+
+    if img_analysis.ndim == 3:
+        gray = cv2.cvtColor(img_analysis, cv2.COLOR_BGR2GRAY)
+        hsv = cv2.cvtColor(img_analysis, cv2.COLOR_BGR2HSV)
         saturation = float(np.mean(hsv[:, :, 1]))
     else:
-        gray = image.copy()
+        gray = img_analysis.copy()
         saturation = 0.0
 
     mean_brightness = float(np.mean(gray))

@@ -24,6 +24,14 @@ def apply_settings(image: np.ndarray, settings: dict) -> np.ndarray:
         raise ValueError("Input image cannot be None")
 
     img = image.copy()
+    
+    # Auto-limit extreme camera dimensions (>1920px) for real-time processing speed
+    h_orig, w_orig = img.shape[:2]
+    max_dim = max(h_orig, w_orig)
+    if max_dim > 1920 and "resize" not in settings and "resize_pct" not in settings:
+        scale = 1920.0 / max_dim
+        img = resize(img, width=int(w_orig * scale), height=int(h_orig * scale))
+
     if not settings:
         return img
 
