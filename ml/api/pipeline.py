@@ -30,12 +30,17 @@ def apply_settings(image: np.ndarray, settings: dict) -> np.ndarray:
     # 1. Brightness
     b_val = settings.get("brightness", 0)
     if b_val != 0:
-        img = brightness(img, value=int(b_val))
+        # Scale large slider values (e.g. +-100) smoothly so image doesn't blow out
+        b_scaled = int(b_val * 0.4) if abs(b_val) > 25 else int(b_val)
+        img = brightness(img, value=b_scaled)
 
     # 2. Contrast
     c_val = settings.get("contrast", 1.0)
     if c_val != 1.0:
-        img = contrast(img, factor=float(c_val))
+        c_float = float(c_val)
+        if c_float > 3.0:
+            c_float = 1.0 + (c_float / 100.0)
+        img = contrast(img, factor=c_float)
 
     # 3. Resize
     resize_setting = settings.get("resize")
