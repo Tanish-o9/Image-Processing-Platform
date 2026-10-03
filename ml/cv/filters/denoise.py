@@ -5,7 +5,7 @@ def denoise(image, strength=10):
     if image is None:
         raise ValueError("Input image cannot be None")
 
-    h = float(strength)
-    if len(image.shape) == 2:
-        return cv2.fastNlMeansDenoising(image, h=h)
-    return cv2.fastNlMeansDenoisingColored(image, h=h, hColor=h)
+    s = float(strength)
+    d = 5 if s < 15 else 7
+    sigma = min(100.0, s * 3.0)
+    return cv2.bilateralFilter(image, d=d, sigmaColor=sigma, sigmaSpace=sigma)
