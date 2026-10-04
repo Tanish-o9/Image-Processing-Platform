@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 function SignUp() {
@@ -100,7 +100,6 @@ function SignUp() {
 
       </nav>
 
-
       {/* Sign Up */}
       <section className="min-h-[calc(100vh-72px)] flex items-center justify-center px-5">
 
@@ -117,7 +116,6 @@ function SignUp() {
 
           </div>
 
-
           {/* Form */}
           <div className="w-full md:w-[380px] bg-white p-8">
 
@@ -128,7 +126,6 @@ function SignUp() {
             <p className="text-[10px] text-gray-500 mt-1">
               Sign up to start using Image Rise
             </p>
-
 
             <form
               className="mt-5"
@@ -152,7 +149,6 @@ function SignUp() {
 
               </div>
 
-
               {/* Email */}
               <div className="mb-3">
 
@@ -169,7 +165,6 @@ function SignUp() {
                 />
 
               </div>
-
 
               {/* Password */}
               <div className="mb-3">
@@ -188,7 +183,6 @@ function SignUp() {
 
               </div>
 
-
               {/* Confirm Password */}
               <div className="mb-4">
 
@@ -206,14 +200,12 @@ function SignUp() {
 
               </div>
 
-
               {/* Error */}
               {error && (
                 <p className="text-[10px] text-red-500 mb-4">
                   {error}
                 </p>
               )}
-
 
               {/* Create Account Button */}
               <button
@@ -223,11 +215,10 @@ function SignUp() {
               >
                 {loading
                   ? "Creating Account..."
-                  : "Create Account ΓåÆ"}
+                  : "Create Account →"}
               </button>
 
             </form>
-
 
             {/* Login */}
             <p className="text-center text-[10px] text-gray-500 mt-5">
