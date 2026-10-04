@@ -1,25 +1,38 @@
 # 🖼️ Image Processing Platform — Backend API
 
-Welcome to the backend service for the **Image Processing Platform**. This service provides a RESTful API powering user authentication, secure image storage & management via Cloudinary, AI/ML-driven image processing and quality analysis via an external ML microservice, and user processing history tracking using Express and MongoDB.
+Welcome to the backend service for the **Image Processing Platform**. This service provides a robust RESTful API built with **Node.js**, **Express 5**, and **MongoDB (Mongoose)**. It orchestrates user authentication, media asset storage via **Cloudinary**, transactional email delivery using **Brevo**, and communicates directly with an external **FastAPI / Python ML microservice** for image processing, quality analysis, and enhancement recommendations.
+
+---
+
+## 🌐 Live Production Deployment
+
+- **Production API Base URL:** [`https://image-processing-platform-iylj.onrender.com`](https://image-processing-platform-iylj.onrender.com)
+- **Deployment Platform:** [Render](https://render.com)
+- **Live Health Status:** [`https://image-processing-platform-iylj.onrender.com/`](https://image-processing-platform-iylj.onrender.com/)
+- **Live ML Service Health:** [`https://image-processing-platform-iylj.onrender.com/api/analysis/health`](https://image-processing-platform-iylj.onrender.com/api/analysis/health)
+
+> **Render Free Tier Note:** Render web services may spin down after a period of inactivity. If the service is sleeping, the first request may take ~30–50 seconds to cold start.
 
 ---
 
 ## 📋 Table of Contents
 
+- [Live Production Deployment](#-live-production-deployment)
 - [Architecture & Tech Stack](#-tech-stack)
 - [Project Directory Structure](#-project-directory-structure)
 - [Prerequisites](#-prerequisites)
 - [Getting Started & Local Setup](#-getting-started--local-setup)
+- [Deployment Configuration (Render)](#-deployment-configuration-render)
 - [Environment Variables (.env)](#-environment-variables-env)
-- [Authentication & Security Flow](#-authentication--security-flow)
+- [Authentication & Security Architecture](#-authentication--security-architecture)
 - [API Endpoints Reference & Examples](#-api-endpoints-reference--examples)
-  - [1. Health Check](#1-health-check)
-  - [2. Authentication (`/api/auth`)](#2-authentication-apiauth)
-  - [3. Image Management (`/api/images`)](#3-image-management-apiimages)
-  - [4. ML & Image Analysis (`/api/analysis`)](#4-ml--image-analysis-apianalysis)
-  - [5. History Management (`/api/history`)](#5-history-management-apihistory)
+  - [1. Server Root / Health](#1-server-root--health)
+  - [2. Authentication Routes (`/api/auth`)](#2-authentication-routes-apiauth)
+  - [3. Image Management Routes (`/api/images`)](#3-image-management-routes-apiimages)
+  - [4. ML & Image Analysis Routes (`/api/analysis`)](#4-ml--image-analysis-routes-apianalysis)
+  - [5. History Management Routes (`/api/history`)](#5-history-management-routes-apihistory)
 - [Standard Response & Error Formats](#-standard-response--error-formats)
-- [Testing Endpoints with cURL](#-testing-endpoints-with-curl)
+- [Quick Start cURL Testing Workflow (Local & Live)](#-quick-start-curl-testing-workflow-local--live)
 - [Available Scripts](#-available-scripts)
 
 ---
@@ -27,19 +40,24 @@ Welcome to the backend service for the **Image Processing Platform**. This servi
 ## 🛠 Tech Stack
 
 - **Runtime Environment:** [Node.js](https://nodejs.org/) (v18+ recommended)
-- **Web Framework:** [Express.js](https://expressjs.com/) (v5)
-- **Database & ODM:** [MongoDB](https://www.mongodb.com/) with [Mongoose](https://mongoosejs.com/)
+- **Web Framework:** [Express.js](https://expressjs.com/) (`v5.2.1`)
+- **Database & ODM:** [MongoDB](https://www.mongodb.com/) with [Mongoose](https://mongoosejs.com/) (`v9.10.2`)
 - **Authentication & Security:** 
-  - JWT (`jsonwebtoken`)
-  - Password Hashing (`bcryptjs` with salt cost 12)
+  - JSON Web Tokens (`jsonwebtoken`)
+  - Password Hashing with salt factor 12 (`bcryptjs`)
+  - Cryptographic 6-digit OTP generation and SHA-256 storage (`crypto`)
   - HTTP Security Headers (`helmet`)
   - Cross-Origin Resource Sharing (`cors`)
-  - Brute-Force & Rate Limiting (`express-rate-limit` on auth endpoints)
-- **File Uploads & Media Storage:** [Multer](https://github.com/expressjs/multer) (in-memory buffer, 25MB limit) & [Cloudinary SDK](https://cloudinary.com/) (stream upload via `streamifier`)
-- **HTTP Client / Microservice Communication:** [Axios](https://axios-http.com/) (for integrating with the Python/FastAPI ML service)
-- **Email Service:** [Nodemailer](https://nodemailer.com/) (6-digit OTP delivery for email verification and password reset)
-- **Validation:** `express-validator`
-- **HTTP Request Logging:** `morgan`
+  - Rate Limiting (`express-rate-limit` — 20 requests per 15 minutes on auth routes)
+- **File Uploads & Media Storage:**
+  - In-memory upload buffer handling (`multer` with 25MB file limit and `image/*` filter)
+  - Cloud hosting and automated folder allocation (`cloudinary` SDK with `streamifier`)
+- **Microservice Integration:**
+  - HTTP client (`axios`) with multipart/form-data streaming (`form-data`) communicating with the external ML microservice
+- **Email Service:**
+  - [Brevo](https://www.brevo.com/) Transactional Emails SDK (`@getbrevo/brevo` `v6.0.3`)
+- **Validation & Parsing:** `express-validator` and `zod`
+- **Request Logging:** `morgan` (`dev` format)
 
 ---
 
@@ -47,89 +65,125 @@ Welcome to the backend service for the **Image Processing Platform**. This servi
 
 ```text
 backend/
-├── .env                  # Local secret configuration (git-ignored)
-├── .env.example          # Template for required environment variables
-├── .gitignore            # Git ignore rules
-├── package.json          # Node dependencies and project scripts
-├── server.js             # Application entry point (connects DB & starts HTTP listener)
+├── .env                          # Local secrets and configuration (git-ignored)
+├── .env.example                  # Template of required environment variables
+├── .gitignore                    # Git ignore file
+├── package.json                  # Dependencies, metadata, and scripts
+├── package-lock.json             # Locked dependency tree
+├── server.js                     # Application entry point (connects DB & boots server)
 └── src/
-    ├── app.js            # Express app configuration, middlewares, and route mounting
+    ├── app.js                    # Express app initialization, middlewares & route mounting
     ├── config/
-    │   ├── db.js         # MongoDB connection setup
-    │   └── cloudinary.js # Cloudinary SDK credentials configuration
+    │   ├── db.js                 # MongoDB connection logic via Mongoose
+    │   └── cloudinary.js         # Cloudinary SDK credentials configuration
     ├── controllers/
-    │   ├── authcontroller.js       # Register, login, OTP verification, password reset, get profile
-    │   ├── imagecontroller.js      # Upload, single fetch, export, delete
-    │   ├── historycontroller.js    # Fetch user history, clear history & Cloudinary assets
-    │   └── analysiscontroller.js   # ML health proxy, stored image processing, direct analysis/recommendation
+    │   ├── authcontroller.js     # Register, login, OTP verify/resend, password reset, me
+    │   ├── imagecontroller.js    # Upload, get by id, delete, export, stats
+    │   ├── historycontroller.js  # Get user history, clear history & Cloudinary assets
+    │   └── analysiscontroller.js # ML health, process image, analyze image, recommendations
     ├── middleware/
-    │   ├── authmiddleware.js        # JWT verification (`protect` guard)
-    │   ├── errormiddleware.js       # Centralized 404 and 500 error handlers
-    │   ├── ratelimitermiddleware.js # Rate limiter on auth routes (15 min window, 10 requests)
-    │   ├── uploadmiddleware.js      # Multer memory storage and image/* mime filter (max 25MB)
-    │   └── validationmiddleware.js  # Express-validator results formatter
+    │   ├── authmiddleware.js     # JWT bearer authentication verification (`protect`)
+    │   ├── errormiddleware.js    # Centralized 404 handler and 500/duplicate error handler
+    │   ├── ratelimitermiddleware.js # Auth limiter (20 req / 15 min) and API limiter
+    │   ├── uploadmiddleware.js   # Multer memory storage (25MB limit, image/* filter)
+    │   └── validationmiddleware.js # Express-validator error formatting middleware
     ├── models/
-    │   ├── user.js       # User schema (credentials, hashed OTPs, expiration timestamps)
-    │   └── image.js      # Image metadata schema (Cloudinary ID/URL, size, format, status, processingResult, analysisResult)
+    │   ├── user.js               # User schema (credentials, OTP hashes, expiry timestamps)
+    │   └── image.js              # Image schema (Cloudinary URLs, dimensions, status, results)
     ├── routes/
-    │   ├── authroutes.js       # Mounted on /api/auth
-    │   ├── imageroutes.js      # Mounted on /api/images
-    │   ├── historyroutes.js    # Mounted on /api/history
-    │   └── analysisroutes.js   # Mounted on /api/analysis
+    │   ├── authroutes.js         # Routes mounted on /api/auth
+    │   ├── imageroutes.js        # Routes mounted on /api/images
+    │   ├── historyroutes.js      # Routes mounted on /api/history
+    │   └── analysisroutes.js     # Routes mounted on /api/analysis
     ├── services/
-    │   ├── cloudinaryservice.js        # Buffer stream upload and asset deletion
-    │   ├── mailservice.js              # HTML email templates and Nodemailer transport
-    │   ├── mlservice.js                # Axios client communicating with external ML service
-    │   └── imageprocessingservice.js   # Workflow orchestrating image status & ML pipeline
+    │   ├── cloudinaryservice.js  # Buffer stream upload to Cloudinary & asset removal
+    │   ├── mailservice.js        # Brevo transactional email client for OTP delivery
+    │   ├── mlservice.js          # Microservice client communicating with ML service
+    │   └── imageprocessingservice.js # Orchestrator for image status and ML execution
     ├── utils/
-    │   ├── otp.js            # 6-digit cryptographic OTP generation & SHA-256 hashing
-    │   ├── response.js       # Standardized success/error JSON response builders
-    │   └── token.js          # JWT signing utility
+    │   ├── otp.js                # Cryptographic 6-digit OTP generator & SHA-256 hasher
+    │   ├── response.js           # Standard success and error response helper builders
+    │   └── token.js              # JWT generator helper
     └── validations/
-        └── authvalidation.js # Express-validator rules for auth payloads
+        └── authvalidation.js     # Express-validator schemas for authentication requests
 ```
 
 ---
 
 ## ⚙️ Prerequisites
 
-Before running the backend, make sure you have:
+Before launching the backend locally or deploying to the cloud, ensure you have:
 1. **Node.js** (v18.x or later) and **npm** installed.
-2. A running **MongoDB** instance (locally or via [MongoDB Atlas](https://www.mongodb.com/atlas)).
-3. A free **Cloudinary** account (Cloud Name, API Key, API Secret).
-4. An **SMTP Service** (e.g., Gmail App Password, Mailtrap, or SendGrid) for sending OTP emails.
-5. An **ML Microservice** running (e.g. FastAPI on `http://localhost:8000`) for processing and enhancement endpoints.
+2. A running **MongoDB** database (local instance or [MongoDB Atlas](https://www.mongodb.com/atlas)).
+3. A **Cloudinary** account (Cloud Name, API Key, API Secret).
+4. A **Brevo (formerly Sendinblue)** account with an API Key and verified sender email for sending OTPs.
+5. An active **ML Microservice** instance (FastAPI / Python) reachable at your configured `ML_BASE_URL`.
 
 ---
 
 ## 🚀 Getting Started & Local Setup
 
-1. **Navigate to the backend folder**:
+1. **Navigate to the backend directory**:
    ```bash
    cd backend
    ```
 
-2. **Install dependencies**:
+2. **Install all dependencies**:
    ```bash
    npm install
    ```
 
 3. **Configure Environment Variables**:
+   Copy `.env.example` to create your local `.env`:
    ```bash
    # On Windows (PowerShell):
    copy .env.example .env
 
-   # On Linux/macOS or Git Bash:
+   # On Linux / macOS / Git Bash:
    cp .env.example .env
    ```
 
-4. **Populate `.env`** with your credentials (see table below).
+4. **Populate `.env`** with your credentials (see the next section).
 
-5. **Start the development server with hot-reload**:
+5. **Run in Development Mode (with hot-reload via Nodemon)**:
    ```bash
    npm run dev
    ```
-   The server will start listening at: `http://localhost:3000`
+   The server will start on `http://localhost:3000`.
+
+6. **Run in Production Mode**:
+   ```bash
+   npm start
+   ```
+
+---
+
+## ☁️ Deployment Configuration (Render)
+
+This backend is deployed on **Render** as a Web Service:
+- **Service URL:** `https://image-processing-platform-iylj.onrender.com`
+- **Environment:** `Node`
+- **Root Directory:** `backend` (if deploying from root monorepo) or repository root
+- **Build Command:** `npm install`
+- **Start Command:** `npm start` (which executes `node server.js`)
+
+### Required Render Environment Variables:
+Set the following under **Environment** in the Render Dashboard:
+```text
+PORT=10000 (Render provides PORT automatically or defaults to 3000)
+MONGO_URI=mongodb+srv://<user>:<password>@cluster0.mongodb.net/imagerise?retryWrites=true&w=majority
+CLIENT_URL=https://<your-frontend-domain>.vercel.app (or frontend URL)
+JWT_SECRET=your_production_secure_jwt_secret
+JWT_EXPIRES_IN=7d
+OTP_EXPIRES_MINUTES=10
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+BREVO_API_KEY=xkeysib-xxxxxxxxxxxxxxxxxxxx
+BREVO_FROM_EMAIL=your-verified-brevo-email@domain.com
+BREVO_FROM_NAME=ImageRise
+ML_BASE_URL=https://<your-ml-service-url>.onrender.com
+```
 
 ---
 
@@ -137,58 +191,53 @@ Before running the backend, make sure you have:
 
 | Variable | Required | Description | Example / Default |
 |---|---|---|---|
-| `PORT` | Optional | Express server port | `3000` |
-| `MONGO_URI` | **Yes** | MongoDB connection string | Atlas URI |
-| `CLIENT_URL` | Optional | Frontend origin permitted by CORS | `http://localhost:5173` |
-| `JWT_SECRET` | **Yes** | Secret key for signing JSON Web Tokens | `your_super_secret_jwt_key_here` |
+| `PORT` | Optional | Port on which Express server listens | `3000` (Local) / auto-assigned on Render |
+| `MONGO_URI` | **Yes** | MongoDB connection URI | `mongodb://127.0.0.1:27017/imagerise` or Atlas URI |
+| `CLIENT_URL` | Optional | Frontend URL allowed for CORS requests | `http://localhost:5173` or production frontend URL |
+| `JWT_SECRET` | **Yes** | Secret string for signing JSON Web Tokens | `your_long_random_jwt_secret_key` |
 | `JWT_EXPIRES_IN` | Optional | Expiration timeframe for JWT tokens | `7d` |
-| `OTP_EXPIRES_MINUTES`| Optional | Expiration window for 6-digit OTP | `10` |
-| `CLOUDINARY_CLOUD_NAME` | **Yes** | Cloudinary account cloud name | `your-cloud-name` |
-| `CLOUDINARY_API_KEY` | **Yes** | Cloudinary API key | `123456789012345` |
-| `CLOUDINARY_API_SECRET` | **Yes** | Cloudinary API secret | `abcdefghijklmnopqrstuvwx` |
-| `MAIL_HOST` | **Yes** | SMTP server hostname | `smtp.gmail.com` or `sandbox.smtp.mailtrap.io` |
-| `MAIL_PORT` | **Yes** | SMTP server port | `587` (TLS) or `465` (SSL) |
-| `MAIL_SECURE` | Optional | Use TLS/SSL directly | `false` for 587, `true` for 465 |
-| `MAIL_USER` | **Yes** | SMTP username / sender account email | `your-email@example.com` |
-| `MAIL_PASSWORD` | **Yes** | SMTP password / App password | `your-app-password` |
-| `MAIL_FROM` | Optional | Sender display name & email | `"ImageRise" <no-reply@imagerise.com>` |
-| `ML_BASE_URL` | **Yes** | Base URL of the ML microservice | `http://localhost:8000` |
+| `OTP_EXPIRES_MINUTES` | Optional | Validity duration for verification/reset OTP | `10` |
+| `CLOUDINARY_CLOUD_NAME` | **Yes** | Cloudinary account Cloud Name | `my-cloud-name` |
+| `CLOUDINARY_API_KEY` | **Yes** | Cloudinary API Key | `123456789012345` |
+| `CLOUDINARY_API_SECRET` | **Yes** | Cloudinary API Secret | `abcdefghijklmnopqrstuvwxyz` |
+| `BREVO_API_KEY` | **Yes** | Brevo Transactional API Key (`xkeysib-...`) | `xkeysib-xxxxxxxxxxxxxxxxxxxx` |
+| `BREVO_FROM_EMAIL` | **Yes** | Verified sender email configured in Brevo | `no-reply@yourdomain.com` |
+| `BREVO_FROM_NAME` | Optional | Sender display name | `ImageRise` |
+| `ML_BASE_URL` | **Yes** | Base URL of the external Python/FastAPI ML service | `http://localhost:8000` or deployed ML URL |
 
 ---
 
-## 🛡️ Authentication & Security Flow
+## 🛡️ Authentication & Security Architecture
 
-1. **Registration:**
-   User posts `{ name, email, password }`. Backend hashes password with bcrypt (cost 12), generates a 6-digit OTP, stores a SHA-256 hash of the OTP with a 10-minute expiry, and emails the code.
-2. **Email Verification:**
-   User sends `{ email, otp }`. Once verified, `isEmailVerified` is flipped to `true`.
-3. **Login:**
-   Unverified accounts receive `403 Forbidden`. Successful login issues a signed JWT.
-4. **Authorized Requests:**
-   Send the JWT in the HTTP Authorization header:
+1. **Password Protection:** Passwords are encrypted using `bcryptjs` with 12 salt rounds and never returned in queries (`select: false`).
+2. **OTP Generation & Verification:** 
+   - A random 6-digit numeric code is generated using Node's cryptographic PRNG (`crypto.randomInt`).
+   - Only the **SHA-256 hash** of the OTP is stored in the database with an expiration timestamp (`OTP_EXPIRES_MINUTES`, default 10 min).
+   - Once verified, the hash and expiration fields are purged.
+3. **Email Verification Requirement:** Accounts must complete email verification before logging in. Attempts to log in with an unverified email receive `403 Forbidden`.
+4. **JWT Bearer Authentication:** Protected routes expect an HTTP header:
    ```http
    Authorization: Bearer <your_jwt_token>
    ```
-5. **Rate Limiting:**
-   Auth endpoints (`/api/auth/*`) allow up to 10 requests per 15 minutes per IP to safeguard against brute-force attacks.
+5. **Rate Limiting:** Auth endpoints (`/api/auth/*`) are protected by `express-rate-limit` allowing up to **20 requests per 15 minutes** per IP address.
 
 ---
 
 ## 📡 API Endpoints Reference & Examples
 
-### Base URL
-```text
-http://localhost:3000
-```
+### Base URLs
+- **Production URL:** `https://image-processing-platform-iylj.onrender.com`
+- **Local Development URL:** `http://localhost:3000`
 
 ---
 
-### 1. Health Check
+### 1. Server Root / Health
 
 #### `GET /`
-Verifies that the backend API server is healthy and accepting connections.
+Health check endpoint confirming that the backend API is online and functional.
 
-- **Auth:** None (Public)
+- **Endpoint:** `GET https://image-processing-platform-iylj.onrender.com/`
+- **Auth:** Public
 - **Response:** `200 OK`
 ```json
 {
@@ -199,18 +248,23 @@ Verifies that the backend API server is healthy and accepting connections.
 
 ---
 
-### 2. Authentication (`/api/auth`)
+### 2. Authentication Routes (`/api/auth`)
 
 #### `POST /api/auth/register`
-Creates an account and sends a 6-digit verification code to the user's email.
+Registers a new user account, stores hashed credentials, generates a 6-digit verification OTP, and emails it using Brevo.
 
-- **Auth:** Public (Rate-limited)
+- **Endpoint:** `POST https://image-processing-platform-iylj.onrender.com/api/auth/register`
+- **Auth:** Public (Rate-limited: 20 req / 15 min)
+- **Validation:** 
+  - `name`: 2–80 characters
+  - `email`: Valid email format
+  - `password`: Minimum 8 characters
 - **Request Body:**
 ```json
 {
-  "name": "Ayush",
-  "email": "ayush123@gamil.com",
-  "password": "Password123!"
+  "name": "Ayush kumar",
+  "email": "ayush123@example.com",
+  "password": "ayush123!"
 }
 ```
 - **Response:** `201 Created`
@@ -219,7 +273,7 @@ Creates an account and sends a 6-digit verification code to the user's email.
   "success": true,
   "message": "Account created. Verification OTP sent to your email.",
   "data": {
-    "userId": "674ef0a12b34567890abcd12",
+    "userId": "674f1b2c3d4e5f6789012345",
     "email": "ayush123@example.com"
   }
 }
@@ -228,55 +282,60 @@ Creates an account and sends a 6-digit verification code to the user's email.
 ---
 
 #### `POST /api/auth/verify-email`
-Validates the 6-digit OTP sent via email and activates the account.
+Verifies the user's account using the 6-digit OTP sent to their email.
 
+- **Endpoint:** `POST https://image-processing-platform-iylj.onrender.com/api/auth/verify-email`
 - **Auth:** Public (Rate-limited)
 - **Request Body:**
 ```json
 {
-  "email": "jane@gmail.com",
-  "otp": "482910"
+  "email": "ayush123@example.com",
+  "otp": "492018"
 }
 ```
 - **Response:** `200 OK`
 ```json
 {
   "success": true,
-  "message": "Email verified successfully"
+  "message": "Email verified successfully",
+  "data": null
 }
 ```
 
 ---
 
 #### `POST /api/auth/resend-verification`
-Generates and sends a new verification OTP.
+Generates a fresh 6-digit OTP and resends it to the user's email if not already verified.
 
+- **Endpoint:** `POST https://image-processing-platform-iylj.onrender.com/api/auth/resend-verification`
 - **Auth:** Public (Rate-limited)
 - **Request Body:**
 ```json
 {
-  "email": "ayush123@gmail.com"
+  "email": "ayush123@example.com"
 }
 ```
 - **Response:** `200 OK`
 ```json
 {
   "success": true,
-  "message": "Verification OTP sent"
+  "message": "Verification OTP sent",
+  "data": null
 }
 ```
 
 ---
 
 #### `POST /api/auth/login`
-Authenticates credentials and returns a JWT access token.
+Authenticates user email and password. Requires the email to be verified. Returns a signed JWT token.
 
+- **Endpoint:** `POST https://image-processing-platform-iylj.onrender.com/api/auth/login`
 - **Auth:** Public (Rate-limited)
 - **Request Body:**
 ```json
 {
-  "email": "ayush123@gmail.com",
-  "password": "Password123!"
+  "email": "ayush123@example.com",
+  "password": "ayush123!"
 }
 ```
 - **Response:** `200 OK`
@@ -285,11 +344,11 @@ Authenticates credentials and returns a JWT access token.
   "success": true,
   "message": "Login successful",
   "data": {
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2NzRmMWIyYzNkNGU1ZjY3ODkwMTIzNDUiLCJlbWFpbCI6ImFsZXhAZXhhbXBsZS5jb20iLCJpYXQiOjE3MDk1Nzg0MDAsImV4cCI6MTcwOTY2NDgwMH0...",
     "user": {
-      "id": "674ef0a12b34567890abcd12",
-      "name": "Ayush",
-      "email": "ayush@gmail.com",
+      "id": "674f1b2c3d4e5f6789012345",
+      "name": "Ayush kumar",
+      "email": "ayush123@example.com",
       "isEmailVerified": true
     }
   }
@@ -299,52 +358,57 @@ Authenticates credentials and returns a JWT access token.
 ---
 
 #### `POST /api/auth/forgot-password`
-Sends a 6-digit password reset OTP to the specified email address.
+Initiates the password reset process by generating a 6-digit reset OTP and emailing it to the user.
 
+- **Endpoint:** `POST https://image-processing-platform-iylj.onrender.com/api/auth/forgot-password`
 - **Auth:** Public (Rate-limited)
 - **Request Body:**
 ```json
 {
-  "email": "ayush123@gmail.com"
+  "email": "ayush123@example.com"
 }
 ```
 - **Response:** `200 OK`
 ```json
 {
   "success": true,
-  "message": "If an account exists for this email, a password reset OTP has been sent."
+  "message": "If an account exists for this email, a password reset OTP has been sent.",
+  "data": null
 }
 ```
 
 ---
 
 #### `POST /api/auth/reset-password`
-Resets user password upon providing a valid reset OTP.
+Resets the user's account password after verifying the 6-digit reset OTP.
 
+- **Endpoint:** `POST https://image-processing-platform-iylj.onrender.com/api/auth/reset-password`
 - **Auth:** Public (Rate-limited)
 - **Request Body:**
 ```json
 {
-  "email": "ayush123@gmail.com",
-  "otp": "918234",
-  "newPassword": "NewStrongPassword123!"
+  "email": "ayush123@example.com",
+  "otp": "837492",
+  "newPassword": "NewBrandNewPassword123!"
 }
 ```
 - **Response:** `200 OK`
 ```json
 {
   "success": true,
-  "message": "Password reset successfully"
+  "message": "Password reset successfully",
+  "data": null
 }
 ```
 
 ---
 
 #### `GET /api/auth/me`
-Retrieves current authenticated user's profile.
+Fetches the current authenticated user profile from their JWT token.
 
+- **Endpoint:** `GET https://image-processing-platform-iylj.onrender.com/api/auth/me`
 - **Auth:** Bearer Token
-- **Headers:** `Authorization: Bearer <token>`
+- **Headers:** `Authorization: Bearer <your_jwt_token>`
 - **Response:** `200 OK`
 ```json
 {
@@ -352,9 +416,9 @@ Retrieves current authenticated user's profile.
   "message": "Current user",
   "data": {
     "user": {
-      "id": "674ef0a12b34567890abcd12",
-      "name": "Jane Doe",
-      "email": "jane@example.com",
+      "id": "674f1b2c3d4e5f6789012345",
+      "name": "Ayush kumar",
+      "email": "ayush123@example.com",
       "isEmailVerified": true
     }
   }
@@ -363,14 +427,17 @@ Retrieves current authenticated user's profile.
 
 ---
 
-### 3. Image Management (`/api/images`)
+### 3. Image Management Routes (`/api/images`)
 
 #### `POST /api/images/upload`
-Uploads an image file to Cloudinary in a user-specific folder (`image-platform/{userId}`) and saves its metadata record in MongoDB.
+Uploads an image file to Cloudinary under the directory `image-processing-platform/{userId}` and creates an Image document in MongoDB.
 
+- **Endpoint:** `POST https://image-processing-platform-iylj.onrender.com/api/images/upload`
 - **Auth:** Bearer Token
-- **Content-Type:** `multipart/form-data`
-- **Form Data Field:** `image` (binary file, max 25MB, MIME `image/*`)
+- **Headers:** 
+  - `Authorization: Bearer <your_jwt_token>`
+  - `Content-Type: multipart/form-data`
+- **Form Field:** `image` (File binary, max 25MB)
 - **Response:** `201 Created`
 ```json
 {
@@ -378,23 +445,23 @@ Uploads an image file to Cloudinary in a user-specific folder (`image-platform/{
   "message": "Image uploaded successfully",
   "data": {
     "image": {
-      "_id": "674f1b2c3d4e5f6789012345",
-      "user": "674ef0a12b34567890abcd12",
-      "originalName": "scenery.jpg",
-      "cloudinaryPublicId": "image-platform/674ef0a12b34567890abcd12/abc123xyz",
-      "cloudinaryUrl": "http://res.cloudinary.com/demo/image/upload/v1/image-platform/scenery.jpg",
-      "secureUrl": "https://res.cloudinary.com/demo/image/upload/v1/image-platform/scenery.jpg",
-      "mimeType": "image/jpeg",
-      "format": "jpg",
-      "size": 245120,
+      "_id": "674f201a4e5f6a7b8c9d0e1f",
+      "user": "674f1b2c3d4e5f6789012345",
+      "originalName": "sample_portrait.png",
+      "cloudinaryPublicId": "image-processing-platform/674f1b2c3d4e5f6789012345/d8fk29slakdn201",
+      "cloudinaryUrl": "http://res.cloudinary.com/demo/image/upload/v1/image-processing-platform/sample_portrait.png",
+      "secureUrl": "https://res.cloudinary.com/demo/image/upload/v1/image-processing-platform/sample_portrait.png",
+      "mimeType": "image/png",
+      "format": "png",
+      "size": 524288,
       "width": 1920,
       "height": 1080,
       "status": "uploaded",
       "processingResult": null,
       "analysisResult": null,
       "exportedAt": null,
-      "createdAt": "2026-10-03T15:30:00.000Z",
-      "updatedAt": "2026-10-03T15:30:00.000Z"
+      "createdAt": "2026-10-04T09:00:00.000Z",
+      "updatedAt": "2026-10-04T09:00:00.000Z"
     }
   }
 }
@@ -403,28 +470,31 @@ Uploads an image file to Cloudinary in a user-specific folder (`image-platform/{
 ---
 
 #### `GET /api/images/getimage/:imageId`
-Retrieves image metadata and processing details by image ID.
+Retrieves an image's metadata and processing status by its MongoDB ID.
 
+- **Endpoint:** `GET https://image-processing-platform-iylj.onrender.com/api/images/getimage/:imageId`
 - **Auth:** Bearer Token
-- **URL Parameters:** `:imageId` (MongoDB ObjectId)
+- **Headers:** `Authorization: Bearer <your_jwt_token>`
 - **Response:** `200 OK`
 ```json
 {
   "success": true,
   "data": {
     "image": {
-      "_id": "674f1b2c3d4e5f6789012345",
-      "user": "674ef0a12b34567890abcd12",
-      "originalName": "scenery.jpg",
-      "secureUrl": "https://res.cloudinary.com/demo/image/upload/v1/image-platform/scenery.jpg",
-      "status": "processed",
-      "format": "jpg",
-      "size": 245120,
+      "_id": "674f201a4e5f6a7b8c9d0e1f",
+      "user": "674f1b2c3d4e5f6789012345",
+      "originalName": "sample_portrait.png",
+      "secureUrl": "https://res.cloudinary.com/demo/image/upload/v1/image-processing-platform/sample_portrait.png",
+      "format": "png",
+      "size": 524288,
       "width": 1920,
       "height": 1080,
+      "status": "processed",
       "processingResult": {
-        "enhancedUrl": "https://res.cloudinary.com/demo/image/upload/v1/image-platform/scenery_enhanced.jpg",
-        "appliedOperations": ["denoise", "auto-contrast", "sharpen"]
+        "enhanced": true
+      },
+      "analysisResult": {
+        "brightness": 128.4
       }
     }
   }
@@ -433,20 +503,40 @@ Retrieves image metadata and processing details by image ID.
 
 ---
 
-#### `POST /api/images/export/:id`
-Marks an image record as exported with a timestamp.
+#### `GET /api/images/stats`
+Calculates dashboard statistics for the logged-in user: count of processed images and count of images analyzed by AI.
 
+- **Endpoint:** `GET https://image-processing-platform-iylj.onrender.com/api/images/stats`
 - **Auth:** Bearer Token
-- **URL Parameters:** `:id` (MongoDB ObjectId)
+- **Headers:** `Authorization: Bearer <your_jwt_token>`
+- **Response:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "imagesProcessed": 14,
+    "aiAnalyses": 9
+  }
+}
+```
+
+---
+
+#### `POST /api/images/export/:id`
+Sets the `exportedAt` timestamp on an image, signaling that the user exported or downloaded the asset.
+
+- **Endpoint:** `POST https://image-processing-platform-iylj.onrender.com/api/images/export/:id`
+- **Auth:** Bearer Token
+- **Headers:** `Authorization: Bearer <your_jwt_token>`
 - **Response:** `200 OK`
 ```json
 {
   "success": true,
   "message": "Image is ready for export",
   "data": {
-    "imageId": "674f1b2c3d4e5f6789012345",
-    "url": "https://res.cloudinary.com/demo/image/upload/v1/image-platform/scenery.jpg",
-    "exportedAt": "2026-10-03T16:00:00.000Z"
+    "imageId": "674f201a4e5f6a7b8c9d0e1f",
+    "url": "https://res.cloudinary.com/demo/image/upload/v1/image-processing-platform/sample_portrait.png",
+    "exportedAt": "2026-10-04T09:30:00.000Z"
   }
 }
 ```
@@ -454,10 +544,11 @@ Marks an image record as exported with a timestamp.
 ---
 
 #### `DELETE /api/images/deleteimage/:imageId`
-Deletes the image asset from Cloudinary and deletes its record from MongoDB.
+Deletes an image from Cloudinary via its public ID and deletes the MongoDB document.
 
+- **Endpoint:** `DELETE https://image-processing-platform-iylj.onrender.com/api/images/deleteimage/:imageId`
 - **Auth:** Bearer Token
-- **URL Parameters:** `:imageId` (MongoDB ObjectId)
+- **Headers:** `Authorization: Bearer <your_jwt_token>`
 - **Response:** `200 OK`
 ```json
 {
@@ -468,11 +559,14 @@ Deletes the image asset from Cloudinary and deletes its record from MongoDB.
 
 ---
 
-### 4. ML & Image Analysis (`/api/analysis`)
+### 4. ML & Image Analysis Routes (`/api/analysis`)
+
+The analysis routes interact with the external ML microservice located at `ML_BASE_URL`.
 
 #### `GET /api/analysis/health`
-Checks the availability and status of the external ML microservice.
+Proxies a health check directly to the ML microservice (`GET ${ML_BASE_URL}/health`).
 
+- **Endpoint:** `GET https://image-processing-platform-iylj.onrender.com/api/analysis/health`
 - **Auth:** Public
 - **Response:** `200 OK`
 ```json
@@ -480,7 +574,7 @@ Checks the availability and status of the external ML microservice.
   "success": true,
   "data": {
     "status": "healthy",
-    "service": "image-processing-ml",
+    "service": "image-ml-service",
     "version": "1.0.0"
   }
 }
@@ -489,41 +583,68 @@ Checks the availability and status of the external ML microservice.
 ---
 
 #### `POST /api/analysis/process`
-Fetches a user's uploaded image by `imageId`, sends its Cloudinary URL and processing parameters to the ML service, updates image status (`processing` -> `processed` or `failed`), and saves the returned result.
+Fetches a stored image by `imageId`, marks its status as `processing`, streams the image buffer and custom settings to the ML microservice (`POST ${ML_BASE_URL}/process`), updates status to `processed` (or `failed` upon error), and saves the results.
 
+> **Note on Binary Responses:** If the ML service returns a binary image buffer, the endpoint sets `Content-Type: image/jpeg` and returns the binary image stream directly. Otherwise, it returns JSON.
+
+- **Endpoint:** `POST https://image-processing-platform-iylj.onrender.com/api/analysis/process`
 - **Auth:** Bearer Token
+- **Headers:** 
+  - `Authorization: Bearer <your_jwt_token>`
+  - `Content-Type: application/json`
 - **Request Body:**
 ```json
 {
-  "imageId": "674f1b2c3d4e5f6789012345",
-  "tasks": ["denoise", "sharpen", "super_resolution"],
-  "scale": 2,
-  "denoise_strength": 0.5
+  "imageId": "674f201a4e5f6a7b8c9d0e1f",
+  "brightness": 1.2,
+  "contrast": 1.1,
+  "sharpness": 1.5,
+  "denoise": true
+}
+```
+- **Response (JSON case):** `200 OK`
+```json
+{
+  "success": true,
+  "message": "Image processed successfully",
+  "data": {
+    "processed": true,
+    "appliedFilters": ["brightness", "contrast", "sharpness", "denoise"]
+  }
+}
+```
+- **Response (Binary image buffer case):** `200 OK` with `Content-Type: image/jpeg`.
+
+---
+
+#### `POST /api/analysis/analyze`
+Finds the user's image by `imageId`, downloads its buffer, and sends it to the ML microservice (`POST ${ML_BASE_URL}/analyze`). Automatically saves the returned analysis to `image.analysisResult`.
+
+- **Endpoint:** `POST https://image-processing-platform-iylj.onrender.com/api/analysis/analyze`
+- **Auth:** Bearer Token
+- **Headers:** 
+  - `Authorization: Bearer <your_jwt_token>`
+  - `Content-Type: application/json`
+- **Request Body:**
+```json
+{
+  "imageId": "674f201a4e5f6a7b8c9d0e1f"
 }
 ```
 - **Response:** `200 OK`
 ```json
 {
   "success": true,
-  "message": "Image processed successfully",
   "data": {
-    "image": {
-      "_id": "674f1b2c3d4e5f6789012345",
-      "status": "processed",
-      "processingResult": {
-        "output_url": "https://res.cloudinary.com/demo/image/upload/v2/enhanced.png",
-        "metrics": {
-          "psnr": 34.2,
-          "ssim": 0.94
-        }
-      }
-    },
-    "result": {
-      "output_url": "https://res.cloudinary.com/demo/image/upload/v2/enhanced.png",
-      "metrics": {
-        "psnr": 34.2,
-        "ssim": 0.94
-      }
+    "brightness": 134.2,
+    "contrast": 48.7,
+    "sharpness": 112.9,
+    "entropy": 7.42,
+    "noise_level": "low",
+    "color_distribution": {
+      "red_mean": 120.1,
+      "green_mean": 138.4,
+      "blue_mean": 142.0
     }
   }
 }
@@ -531,42 +652,18 @@ Fetches a user's uploaded image by `imageId`, sends its Cloudinary URL and proce
 
 ---
 
-#### `POST /api/analysis/analyze`
-Passes image options directly to the ML microservice to assess quality, noise, brightness, contrast, and histogram distributions.
-
-- **Auth:** Bearer Token
-- **Request Body:**
-```json
-{
-  "imageUrl": "https://res.cloudinary.com/demo/image/upload/v1/image-platform/scenery.jpg",
-  "features": ["brightness", "sharpness", "noise_level", "color_palette"]
-}
-```
-- **Response:** `200 OK`
-```json
-{
-  "success": true,
-  "data": {
-    "brightness": 0.62,
-    "contrast": 1.15,
-    "sharpness_score": 78.4,
-    "noise_level": "low",
-    "dominant_colors": ["#1A365D", "#2B6CB0", "#E2E8F0"]
-  }
-}
-```
-
----
-
 #### `POST /api/analysis/recommend`
-Requests algorithmic recommendations from the ML microservice for optimal enhancement parameters based on image traits.
+Fetches the user's image by `imageId` and requests algorithmic recommendations and filter presets from the ML microservice (`POST ${ML_BASE_URL}/recommend`).
 
+- **Endpoint:** `POST https://image-processing-platform-iylj.onrender.com/api/analysis/recommend`
 - **Auth:** Bearer Token
+- **Headers:** 
+  - `Authorization: Bearer <your_jwt_token>`
+  - `Content-Type: application/json`
 - **Request Body:**
 ```json
 {
-  "imageUrl": "https://res.cloudinary.com/demo/image/upload/v1/image-platform/scenery.jpg",
-  "targetUse": "web_display"
+  "imageId": "674f201a4e5f6a7b8c9d0e1f"
 }
 ```
 - **Response:** `200 OK`
@@ -574,24 +671,33 @@ Requests algorithmic recommendations from the ML microservice for optimal enhanc
 {
   "success": true,
   "data": {
-    "recommendations": [
-      { "operation": "denoise", "parameters": { "strength": 0.3 } },
-      { "operation": "sharpen", "parameters": { "amount": 1.2 } },
-      { "operation": "format_conversion", "parameters": { "targetFormat": "webp", "quality": 85 } }
+    "recommended_actions": [
+      {
+        "filter": "denoise",
+        "strength": 0.4,
+        "reason": "Slight high-frequency grain detected in background"
+      },
+      {
+        "filter": "contrast",
+        "factor": 1.15,
+        "reason": "Dynamic range can be expanded for better clarity"
+      }
     ],
-    "estimatedSavingsBytes": 124000
+    "suggested_preset": "vibrant_clean"
   }
 }
 ```
 
 ---
 
-### 5. History Management (`/api/history`)
+### 5. History Management Routes (`/api/history`)
 
 #### `GET /api/history/gethistory`
-Retrieves chronological history of all images uploaded and processed by the authenticated user (sorted newest first).
+Retrieves all images uploaded by the authenticated user, sorted in descending order by `createdAt` (newest first).
 
+- **Endpoint:** `GET https://image-processing-platform-iylj.onrender.com/api/history/gethistory`
 - **Auth:** Bearer Token
+- **Headers:** `Authorization: Bearer <your_jwt_token>`
 - **Response:** `200 OK`
 ```json
 {
@@ -600,13 +706,14 @@ Retrieves chronological history of all images uploaded and processed by the auth
   "data": {
     "history": [
       {
-        "_id": "674f1b2c3d4e5f6789012345",
-        "originalName": "scenery.jpg",
-        "secureUrl": "https://res.cloudinary.com/demo/image/upload/v1/image-platform/scenery.jpg",
+        "_id": "674f201a4e5f6a7b8c9d0e1f",
+        "user": "674f1b2c3d4e5f6789012345",
+        "originalName": "sample_portrait.png",
+        "secureUrl": "https://res.cloudinary.com/demo/image/upload/v1/image-processing-platform/sample_portrait.png",
         "status": "processed",
-        "format": "jpg",
-        "size": 245120,
-        "createdAt": "2026-10-03T15:30:00.000Z"
+        "format": "png",
+        "size": 524288,
+        "createdAt": "2026-10-04T09:00:00.000Z"
       }
     ]
   }
@@ -616,9 +723,11 @@ Retrieves chronological history of all images uploaded and processed by the auth
 ---
 
 #### `DELETE /api/history/deletehistory`
-Permanently clears all images for the logged-in user: deletes each corresponding asset from Cloudinary and removes all records from MongoDB.
+Permanently clears the authenticated user's processing history: iterates through all image documents, deletes each corresponding asset from Cloudinary, and removes all database records.
 
+- **Endpoint:** `DELETE https://image-processing-platform-iylj.onrender.com/api/history/deletehistory`
 - **Auth:** Bearer Token
+- **Headers:** `Authorization: Bearer <your_jwt_token>`
 - **Response:** `200 OK`
 ```json
 {
@@ -631,23 +740,24 @@ Permanently clears all images for the logged-in user: deletes each corresponding
 
 ## 📦 Standard Response & Error Formats
 
-### Successful Response Format
+### 1. Successful JSON Response
 ```json
 {
   "success": true,
-  "message": "Human readable confirmation message (optional)",
+  "message": "Human readable message (optional)",
   "data": { ... }
 }
 ```
 
-### Validation Error Format (`400 Bad Request`)
+### 2. Validation Failure (`400 Bad Request`)
+Produced by `express-validator` and `validationmiddleware.js`:
 ```json
 {
   "success": false,
   "errors": [
     {
       "type": "field",
-      "value": "invalid-email",
+      "value": "bad-email",
       "msg": "Please enter a valid email",
       "path": "email",
       "location": "body"
@@ -656,81 +766,132 @@ Permanently clears all images for the logged-in user: deletes each corresponding
 }
 ```
 
-### Standard Error Format (`401`, `403`, `404`, `500`)
+### 3. Application Errors (`400`, `401`, `403`, `404`, `409`, `429`, `500`)
 ```json
 {
   "success": false,
-  "message": "Detailed error explanation here"
+  "message": "Descriptive error message"
 }
 ```
 
-### Common HTTP Status Codes
-| Status Code | Meaning | Typical Trigger |
+### HTTP Status Codes Reference
+| Status Code | Meaning | Typical Occasion |
 |---|---|---|
-| `200 OK` | Request succeeded | Successful GET, standard update/delete |
+| `200 OK` | Successful request | Fetching resources, updating data, processing completed |
 | `201 Created` | Resource created | Successful registration or image upload |
-| `400 Bad Request` | Invalid input | Validation failures, missing required fields, expired OTP |
-| `401 Unauthorized` | Missing / invalid token | Expired token or unauthenticated request |
-| `403 Forbidden` | Access denied | Attempting to login before email verification |
-| `404 Not Found` | Not found | Invalid image ID or route doesn't exist |
-| `409 Conflict` | Duplicate resource | Email already registered in system |
-| `429 Too Many Requests` | Rate limit hit | More than 10 requests within 15 minutes on auth routes |
-| `500 Internal Error` | Server error | Cloudinary error, unhandled exception, DB failure |
+| `400 Bad Request` | Invalid input | Validation errors, missing `imageId`, expired OTP |
+| `401 Unauthorized` | Auth missing or invalid | Invalid JWT, missing `Authorization: Bearer` header |
+| `403 Forbidden` | Access forbidden | Attempting to login before email verification is complete |
+| `404 Not Found` | Resource not found | Invalid endpoint URL or image ID not found |
+| `409 Conflict` | Duplicate resource | Registering an email that already exists |
+| `429 Too Many Requests` | Rate limit exceeded | Exceeding 20 auth requests in a 15-minute window |
+| `500 Internal Error` | Server execution error | Cloudinary network error, Brevo failure, or ML failure |
 
 ---
 
-## 🧪 Testing Endpoints with cURL
+## 🧪 Quick Start cURL Testing Workflow (Local & Live)
 
-Here is a quick walkthrough to test the core flow using cURL in your terminal:
+You can run these tests against either local (`http://localhost:3000`) or the live deployment by setting the base URL variable:
 
-### 1. Register User
 ```bash
-curl -X POST http://localhost:3000/api/auth/register \
+# To test against the live deployment:
+API_URL="https://image-processing-platform-iylj.onrender.com"
+
+# Or to test locally:
+# API_URL="http://localhost:3000"
+```
+
+### 1. Check API Health
+```bash
+curl -X GET $API_URL/
+```
+
+### 2. Register a New Account
+```bash
+curl -X POST $API_URL/api/auth/register \
   -H "Content-Type: application/json" \
-  -d '{"name":"astitv","email":"astitv@gmail.com","password":"SecretPassword123!"}'
+  -d '{
+    "name": "Jane Developer",
+    "email": "jane@example.com",
+    "password": "Password123!"
+  }'
 ```
 
-### 2. Verify Email with Received OTP
+### 3. Verify Email with Received OTP
+Check your email (sent via Brevo) for the 6-digit OTP:
 ```bash
-curl -X POST http://localhost:3000/api/auth/verify-email \
+curl -X POST $API_URL/api/auth/verify-email \
   -H "Content-Type: application/json" \
-  -d '{"email":"astitiv@gmail.com","otp":"123456"}'
+  -d '{
+    "email": "jane@example.com",
+    "otp": "123456"
+  }'
 ```
 
-### 3. Log In to Receive JWT
+### 4. Log In to Receive JWT Token
 ```bash
-curl -X POST http://localhost:3000/api/auth/login \
+curl -X POST $API_URL/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"astitv@gmail.com","password":"SecretPassword123!"}'
+  -d '{
+    "email": "jane@example.com",
+    "password": "Password123!"
+  }'
 ```
-*Copy the returned `token` from the response.*
+*Save the `token` from the JSON response and replace `<TOKEN>` in subsequent commands.*
 
-### 4. Upload an Image
+### 5. Upload an Image
 ```bash
-curl -X POST http://localhost:3000/api/images/upload \
-  -H "Authorization: Bearer <YOUR_JWT_TOKEN>" \
-  -F "image=@/path/to/local/sample.jpg"
+curl -X POST $API_URL/api/images/upload \
+  -H "Authorization: Bearer <TOKEN>" \
+  -F "image=@/path/to/local/photo.jpg"
 ```
+*Note the returned `_id` as `<IMAGE_ID>`.*
 
-### 5. Trigger ML Processing
+### 6. Run ML Image Analysis
 ```bash
-curl -X POST http://localhost:3000/api/analysis/process \
-  -H "Authorization: Bearer <YOUR_JWT_TOKEN>" \
+curl -X POST $API_URL/api/analysis/analyze \
+  -H "Authorization: Bearer <TOKEN>" \
   -H "Content-Type: application/json" \
-  -d '{"imageId":"<IMAGE_ID_FROM_UPLOAD_RESPONSE>","tasks":["denoise","sharpen"]}'
+  -d '{"imageId": "<IMAGE_ID>"}'
 ```
 
-### 6. View User History
+### 7. Request ML Recommendations
 ```bash
-curl -X GET http://localhost:3000/api/history/gethistory \
-  -H "Authorization: Bearer <YOUR_JWT_TOKEN>"
+curl -X POST $API_URL/api/analysis/recommend \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"imageId": "<IMAGE_ID>"}'
+```
+
+### 8. Process Image with ML Service
+```bash
+curl -X POST $API_URL/api/analysis/process \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "imageId": "<IMAGE_ID>",
+    "brightness": 1.2,
+    "contrast": 1.1
+  }'
+```
+
+### 9. View Image Dashboard Statistics
+```bash
+curl -X GET $API_URL/api/images/stats \
+  -H "Authorization: Bearer <TOKEN>"
+```
+
+### 10. View Activity History
+```bash
+curl -X GET $API_URL/api/history/gethistory \
+  -H "Authorization: Bearer <TOKEN>"
 ```
 
 ---
 
 ## 📜 Available Scripts
 
-In the `backend` directory, you can run:
+From within the `backend/` directory:
 
-- **`npm run dev`**: Starts server with `nodemon` for active development and auto-restarts on code changes.
-- **`npm start`**: Runs the server in production mode using standard `node server.js`.
+- **`npm run dev`**: Starts the application using `nodemon server.js` for development with automatic restarts on file changes.
+- **`npm start`**: Runs the server in production mode using Node.js (`node server.js`).
