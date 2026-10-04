@@ -1,4 +1,9 @@
+import { useNavigate } from "react-router-dom";
+
 function Reset() {
+
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen bg-[#f7fbfc]">
 
@@ -9,12 +14,12 @@ function Reset() {
 
           <img
             src="public\images\logo.png"
-            alt="ImageForge"
+            alt="Image Rise"
             className="w-8 h-8"
           />
 
           <span className="font-bold text-sm">
-            ImageForge
+            Image Rise
           </span>
 
         </div>
@@ -57,6 +62,7 @@ function Reset() {
 
 
           <button
+            onClick={() => navigate("/login")}
             className="w-full mt-7 bg-gradient-to-r from-indigo-500 to-cyan-400 text-white py-3 rounded-md text-xs font-semibold"
           >
             Login Now →

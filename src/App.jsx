@@ -1,3 +1,4 @@
+import ProtectedRoute from "./components/ProtectedRoute"; 
 import {
   BrowserRouter,
   Routes,
@@ -18,8 +19,16 @@ import Home from "./pages/dashboard/Home";
 import AIAnalysis from "./pages/dashboard/AIAnalysis";
 import Settings from "./pages/dashboard/Settings";
 
+import Upload from "./pages/dashboard/Upload";
+import EditImage from "./pages/dashboard/EditImage";
+import Analysis from "./pages/dashboard/Analysis";
+import Recommendations from "./pages/dashboard/Recommendations";
+import History from "./pages/dashboard/History";
+import ExportImage from "./pages/dashboard/ExportImage";
+
 
 function App() {
+
   return (
 
     <BrowserRouter>
@@ -27,10 +36,15 @@ function App() {
       <Routes>
 
         {/* Landing */}
-        <Route path="/" element={<Landing />} />
+
+        <Route
+          path="/"
+          element={<Landing />}
+        />
 
 
         {/* Authentication */}
+
         <Route element={<AuthLayout />}>
 
           <Route
@@ -60,30 +74,63 @@ function App() {
 
         </Route>
 
+{/* Dashboard - Protected */}
 
-        {/* Dashboard */}
-        <Route
-          path="/dashboard"
-          element={<AppLayout />}
-        >
+<Route element={<ProtectedRoute />}>
 
-          <Route
-            index
-            element={<Home />}
-          />
+  <Route
+    path="/dashboard"
+    element={<AppLayout />}
+  >
 
-          <Route
-            path="ai-analysis"
-            element={<AIAnalysis />}
-          />
+    <Route
+      index
+      element={<Home />}
+    />
 
-          <Route
-            path="settings"
-            element={<Settings />}
-          />
+    <Route
+      path="upload"
+      element={<Upload />}
+    />
 
-        </Route>
+    <Route
+      path="edit"
+      element={<EditImage />}
+    />
 
+    <Route
+      path="analysis"
+      element={<Analysis />}
+    />
+
+    <Route
+      path="recommendations"
+      element={<Recommendations />}
+    />
+
+    <Route
+      path="history"
+      element={<History />}
+    />
+
+    <Route
+      path="export"
+      element={<ExportImage />}
+    />
+
+    <Route
+      path="ai-analysis"
+      element={<AIAnalysis />}
+    />
+
+    <Route
+      path="settings"
+      element={<Settings />}
+    />
+
+  </Route>
+
+</Route>
 
       </Routes>
 

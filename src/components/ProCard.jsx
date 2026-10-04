@@ -2,9 +2,9 @@ import { Link } from "react-router-dom";
 
 function ProCard() {
   return (
-    <div className="m-3 p-4 bg-purple-200 rounded-lg">
+    <div className="m-3 p-4 bg-[#d2ceff] rounded-lg">
 
-      <p className="text-xs font-bold text-purple-700">
+      <p className="text-xs font-bold text-[#5b4ce1]">
         Pro Plan
       </p>
 
@@ -16,7 +16,7 @@ function ProCard() {
 
       <Link
         to="/dashboard/upgrade"
-        className="inline-block mt-3 bg-purple-600 text-white text-[10px] px-4 py-2 rounded-md"
+        className="inline-block mt-3 bg-[#5b4ce1] text-white text-[10px] px-4 py-2 rounded-md"
       >
         Upgrade
       </Link>

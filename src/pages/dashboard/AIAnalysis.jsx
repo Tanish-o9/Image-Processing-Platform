@@ -80,13 +80,13 @@ function AIAnalysis() {
 
         <div className="grid grid-cols-4 md:grid-cols-7 gap-3">
 
-          <Category name="Nature" />
-          <Category name="Birds" />
-          <Category name="Leaves" />
-          <Category name="Ducks" />
-          <Category name="Portrait" />
-          <Category name="Animals" />
-          <Category name="Sunset" />
+          <Category name="Nature" image="/images/nature2.png" />
+          <Category name="Birds" image="/images/birds.png"/>
+          <Category name="Leaves" image="/images/leaves.png"/>
+          <Category name="Ducks" image="/images/ducks.png"/>
+          <Category name="Portrait" image="/images/portrait2.png"/>
+          <Category name="Animals" image="/images/animals.png"/>
+          <Category name="Sunset" image="/images/sunset.png"/>
 
         </div>
 
@@ -105,16 +105,19 @@ function AIAnalysis() {
           <TrendingCard
             title="AI Image Enhancement"
             description="Bring out the best in your images"
+            image="/images/AIimageEnhancement.png"
           />
 
           <TrendingCard
             title="Background Removal"
             description="Remove backgrounds in seconds"
+            image="/images/backgroundRemoval.png"
           />
 
           <TrendingCard
             title="AI Analysis"
             description="Get detailed insights about your images"
+            image="/images/AIanalysis.png"
           />
 
         </div>
@@ -155,11 +158,15 @@ function ToolCard({ icon, title, description }) {
 
 
 /* Category */
-function Category({ name }) {
+function Category({ name, image }) {
   return (
     <div className="bg-white border border-gray-100 rounded-lg p-2 text-center">
 
-      <div className="h-12 bg-gradient-to-br from-green-300 to-orange-300 rounded mb-2"></div>
+      <img
+        src={image}
+        alt={name}
+        className="h-15 w-full object-cover rounded mb-2"
+      />
 
       <p className="text-[10px] font-semibold">
         {name}
@@ -171,11 +178,15 @@ function Category({ name }) {
 
 
 /* Trending */
-function TrendingCard({ title, description }) {
+function TrendingCard({ title, description, image }) {
   return (
     <div className="bg-white border border-gray-100 rounded-lg overflow-hidden">
 
-      <div className="h-28 bg-gradient-to-r from-green-300 to-blue-300"></div>
+      <img
+        src={image}
+        alt={title}
+        className="h-28 w-full object-cover"
+      />
 
       <div className="p-3">
 

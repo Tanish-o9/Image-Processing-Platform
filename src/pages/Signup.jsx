@@ -1,4 +1,82 @@
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+
 function SignUp() {
+
+  const navigate = useNavigate();
+
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [terms, setTerms] = useState(false);
+
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSignup = async (event) => {
+
+    event.preventDefault();
+
+    setError("");
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    if (!terms) {
+      setError("Please agree to the Terms & Conditions and Privacy Policy.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+
+      const response = await fetch(
+        "http://localhost:3000/api/auth/register",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json"
+          },
+
+          body: JSON.stringify({
+            name,
+            email,
+            password
+          })
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Registration failed");
+      }
+
+      // Store email temporarily for OTP verification
+      sessionStorage.setItem(
+        "verificationEmail",
+        email
+      );
+
+      // Go to existing verification screen
+      navigate("/verify-email");
+
+    } catch (error) {
+
+      setError(error.message);
+
+    } finally {
+
+      setLoading(false);
+
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#f7fbfc]">
 
@@ -8,12 +86,12 @@ function SignUp() {
         <div className="flex items-center gap-2">
           <img
             src="public\images\logo.png"
-            alt="ImageForge"
+            alt="Image Rise"
             className="w-8 h-8"
           />
 
           <span className="font-bold text-sm">
-            ImageForge
+            Image Rise
           </span>
         </div>
 
@@ -55,7 +133,10 @@ function SignUp() {
             </p>
 
 
-            <form className="mt-5">
+            <form
+              className="mt-5"
+              onSubmit={handleSignup}
+            >
 
               {/* Name */}
               <div className="mb-3">
@@ -67,6 +148,8 @@ function SignUp() {
                 <input
                   type="text"
                   placeholder="Enter your name"
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
                   className="w-full border border-gray-200 rounded-md px-3 py-2.5 text-xs outline-none focus:border-indigo-500"
                 />
 
@@ -83,6 +166,8 @@ function SignUp() {
                 <input
                   type="email"
                   placeholder="Enter your email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
                   className="w-full border border-gray-200 rounded-md px-3 py-2.5 text-xs outline-none focus:border-indigo-500"
                 />
 
@@ -99,6 +184,8 @@ function SignUp() {
                 <input
                   type="password"
                   placeholder="Create a password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
                   className="w-full border border-gray-200 rounded-md px-3 py-2.5 text-xs outline-none focus:border-indigo-500"
                 />
 
@@ -115,6 +202,8 @@ function SignUp() {
                 <input
                   type="password"
                   placeholder="Confirm your password"
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
                   className="w-full border border-gray-200 rounded-md px-3 py-2.5 text-xs outline-none focus:border-indigo-500"
                 />
 
@@ -123,7 +212,11 @@ function SignUp() {
 
               <div className="flex items-center gap-2 mb-4">
 
-                <input type="checkbox" />
+                <input
+                  type="checkbox"
+                  checked={terms}
+                  onChange={(event) => setTerms(event.target.checked)}
+                />
 
                 <p className="text-[9px] text-gray-500">
                   I agree to the Terms & Conditions and Privacy Policy.
@@ -132,47 +225,35 @@ function SignUp() {
               </div>
 
 
+              {/* Error */}
+              {error && (
+                <p className="text-[10px] text-red-500 mb-4">
+                  {error}
+                </p>
+              )}
+
+
               <button
                 type="submit"
+                disabled={loading}
                 className="w-full bg-gradient-to-r from-indigo-500 to-cyan-400 text-white py-3 rounded-md text-xs font-semibold"
               >
-                Create Account →
+                {loading ? "Creating Account..." : "Create Account →"}
               </button>
 
             </form>
 
 
-            <div className="flex items-center gap-3 my-4">
-
-              <div className="h-px bg-gray-200 flex-1"></div>
-
-              <span className="text-[10px] text-gray-400">
-                OR
-              </span>
-
-              <div className="h-px bg-gray-200 flex-1"></div>
-
-            </div>
-
-
-            <div className="flex gap-3">
-
-              <button className="flex-1 border border-gray-200 rounded-md py-2 text-[10px]">
-                Continue with Google
-              </button>
-
-              <button className="flex-1 border border-gray-200 rounded-md py-2 text-[10px]">
-                Continue with Apple
-              </button>
-
-            </div>
-
-
             <p className="text-center text-[10px] text-gray-500 mt-5">
               Already have an account?
-              <a href="#" className="text-indigo-500 ml-1">
+
+              <Link
+                to="/login"
+                className="text-indigo-500 ml-1"
+              >
                 Login
-              </a>
+              </Link>
+
             </p>
 
           </div>
