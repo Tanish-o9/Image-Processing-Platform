@@ -1,4 +1,69 @@
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+
 function ForgotPassword() {
+
+  const navigate = useNavigate();
+
+  const [email, setEmail] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleForgotPassword = async (event) => {
+
+    event.preventDefault();
+
+    setError("");
+    setLoading(true);
+
+    try {
+
+      const response = await fetch(
+        "http://localhost:3000/api/auth/forgot-password",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json"
+          },
+
+          body: JSON.stringify({
+            email
+          })
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Something went wrong");
+      }
+
+      // Store email for reset process
+      sessionStorage.setItem(
+        "resetEmail",
+        email
+      );
+
+      // Tell VerifyEmail screen that this is a password reset
+      sessionStorage.setItem(
+        "verificationMode",
+        "reset"
+      );
+
+      navigate("/verify-email");
+
+    } catch (error) {
+
+      setError(error.message);
+
+    } finally {
+
+      setLoading(false);
+
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#f7fbfc]">
 
@@ -9,12 +74,12 @@ function ForgotPassword() {
 
           <img
             src="public\images\logo.png"
-            alt="ImageForge"
+            alt="Image Rise"
             className="w-8 h-8"
           />
 
           <span className="font-bold text-sm">
-            ImageForge
+            Image Rise
           </span>
 
         </div>
@@ -58,7 +123,10 @@ function ForgotPassword() {
             </p>
 
 
-            <form className="mt-7">
+            <form
+              className="mt-7"
+              onSubmit={handleForgotPassword}
+            >
 
               <label className="block text-xs font-medium mb-2">
                 Email
@@ -67,15 +135,24 @@ function ForgotPassword() {
               <input
                 type="email"
                 placeholder="Enter your email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
                 className="w-full border border-gray-200 rounded-md px-3 py-3 text-xs outline-none focus:border-indigo-500"
               />
+
+              {error && (
+                <p className="text-[10px] text-red-500 mt-3">
+                  {error}
+                </p>
+              )}
 
 
               <button
                 type="submit"
+                disabled={loading}
                 className="w-full mt-5 bg-gradient-to-r from-indigo-500 to-cyan-400 text-white py-3 rounded-md text-xs font-semibold"
               >
-                Send Reset Link →
+                {loading ? "Sending..." : "Send Reset OTP →"}
               </button>
 
             </form>
@@ -85,12 +162,12 @@ function ForgotPassword() {
 
               Remember your password?
 
-              <a
-                href="#"
+              <Link
+                to="/login"
                 className="text-indigo-500 ml-1"
               >
                 Login
-              </a>
+              </Link>
 
             </p>
 
