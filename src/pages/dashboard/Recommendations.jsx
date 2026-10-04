@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ML_URL, getToken } from "../../api";
+import { BACKEND_URL, getToken } from "../../api";
 
 function Recommendations() {
 
@@ -87,8 +87,8 @@ function Recommendations() {
 
 
       const response =
-        await fetch(
-          `${ML_URL}/recommend`,
+  await fetch(
+    `${BACKEND_URL}/api/analysis/recommend`,
           {
             method: "POST",
 
