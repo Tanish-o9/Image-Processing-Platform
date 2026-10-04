@@ -21,10 +21,13 @@ app.use(cors({
 );
 
 // body parser
-app.use(express.json());
+app.use(express.json({
+    limit:"10mb"
+}));
 
 app.use(express.urlencoded({
-        extended: true
+        extended: true,
+        limit:"10mb"
     })
 );
 // logging
@@ -34,7 +37,7 @@ app.use(morgan("dev"));
 app.get("/", (req, res) => {
     res.status(200).json({
         success: true,
-        message: "ImageForge API is running"
+        message: "ImageRise API is running"
     });
 });
 
