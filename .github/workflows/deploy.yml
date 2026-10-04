@@ -1,0 +1,51 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check frontend builds
+        working-directory: Frontend/Image Rise
+        run: |
+          npm ci
+          VITE_API_URL="" npm run build
+
+  deploy:
+    needs: check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy on EC2
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          command_timeout: 20m
+          script: |
+            set -e
+            cd ~/Image-Processing-Platform
+            git fetch origin main
+            git reset --hard origin/main
+
+            cd backend
+            npm ci
+
+            cd ../ml
+            venv/bin/pip install -r requirements.txt
+
+            cd "../Frontend/Image Rise"
+            npm ci
+            VITE_API_URL="" npm run build
+            rm -rf /var/www/imagerise/*
+            cp -r dist/* /var/www/imagerise/
+
+            pm2 restart ml backend
