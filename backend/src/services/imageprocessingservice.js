@@ -8,6 +8,7 @@ const processStoredImage = async (
     userId,
     options = {}
 ) => {
+
     const image =
         await Image.findOne({
             _id: imageId,
@@ -25,10 +26,10 @@ const processStoredImage = async (
     await image.save();
 
     try {
-        const result = await processImage({
-                imageUrl:image.secureUrl,
-                ...options
-            });
+        const result = await processImage(
+            image.secureUrl,
+            options
+        );
 
         image.status = "processed";
 

@@ -143,10 +143,41 @@ const exportImage = async (req,res,next) => {
     }
 };
 
+// Get image statistics for logged-in user
+const getImageStats = async (req, res, next) => {
+    try {
+        const imagesProcessed =
+            await Image.countDocuments({
+                user: req.user._id,
+                status: "processed"
+            });
+
+        const aiAnalyses =
+            await Image.countDocuments({
+                user: req.user._id,
+                analysisResult: {
+                    $ne: null
+                }
+            });
+
+        return res.status(200).json({
+            success: true,
+
+            data: {
+                imagesProcessed,
+                aiAnalyses
+            }
+        });
+
+    } catch (error) {
+        next(error);
+    }
+};
 
 module.exports = {
     uploadImage,
     getImageById,
     deleteImage,
-    exportImage
+    exportImage,
+    getImageStats
 };
