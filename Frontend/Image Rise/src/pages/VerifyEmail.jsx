@@ -111,7 +111,7 @@ function VerifyEmail() {
       if (verificationMode === "signup") {
 
         const response = await fetch(
-          "http://localhost:3000/api/auth/verify-email",
+          `${import.meta.env.VITE_API_URL}/api/auth/verify-email`,
           {
             method: "POST",
 
@@ -146,7 +146,7 @@ function VerifyEmail() {
       else {
 
         const response = await fetch(
-          "http://localhost:3000/api/auth/reset-password",
+          `${import.meta.env.VITE_API_URL}/api/auth/reset-password`,
           {
             method: "POST",
 
@@ -205,7 +205,7 @@ function VerifyEmail() {
       if (verificationMode === "reset") {
 
         const response = await fetch(
-          "http://localhost:3000/api/auth/forgot-password",
+          `${import.meta.env.VITE_API_URL}/api/auth/forgot-password`,
           {
             method: "POST",
 
@@ -236,7 +236,7 @@ function VerifyEmail() {
        * SIGNUP VERIFICATION OTP
        */
       const response = await fetch(
-        "http://localhost:3000/api/auth/resend-verification",
+       `${import.meta.env.VITE_API_URL}/api/auth/resend-verification`,
         {
           method: "POST",
 

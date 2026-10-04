@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ML_URL, getToken } from "../../api";
+import { BACKEND_URL, getToken } from "../../api";
 
 function EditImage() {
 
@@ -499,7 +499,7 @@ function EditImage() {
 
 
       const response = await fetch(
-        `${ML_URL}/process`,
+     `${BACKEND_URL}/api/analysis/process`,
         {
           method: "POST",
 

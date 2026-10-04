@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { BACKEND_URL, getToken } from "../../api";
 
 function Settings() {
 
@@ -63,8 +64,7 @@ function Settings() {
 
       try {
 
-        const token =
-          localStorage.getItem("token");
+        const token = getToken();
 
         if (!token) {
           return;
@@ -72,7 +72,7 @@ function Settings() {
 
         const response =
           await fetch(
-            "http://localhost:3000/api/images/stats",
+            `${BACKEND_URL}/api/images/stats`,
             {
               method: "GET",
               headers: {
@@ -114,13 +114,14 @@ function Settings() {
 
 
   const handleLogout = () => {
+  sessionStorage.removeItem("token");
+  sessionStorage.removeItem("user");
 
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
 
-    navigate("/login");
-  };
-
+  navigate("/login");
+};
 
   return (
     <div>
