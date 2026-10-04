@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class CustomTextField extends StatelessWidget {
+class CustomTextField extends StatefulWidget {
   final String hintText;
   final IconData icon;
   final bool obscureText;
@@ -19,16 +19,43 @@ class CustomTextField extends StatelessWidget {
   });
 
   @override
+  State<CustomTextField> createState() => _CustomTextFieldState();
+}
+
+class _CustomTextFieldState extends State<CustomTextField> {
+  // true = password is hidden (dots), false = password is visible
+  late bool _hidden;
+
+  @override
+  void initState() {
+    super.initState();
+    _hidden = widget.obscureText;
+  }
+
+  @override
   Widget build(BuildContext context) {
     return TextFormField(
-      controller: controller,
-      obscureText: obscureText,
-      keyboardType: keyboardType,
-      validator: validator,
+      controller: widget.controller,
+      obscureText: _hidden,
+      keyboardType: widget.keyboardType,
+      validator: widget.validator,
       autovalidateMode: AutovalidateMode.onUserInteraction,
       decoration: InputDecoration(
-        hintText: hintText,
-        prefixIcon: Icon(icon, color: Colors.grey, size: 20),
+        hintText: widget.hintText,
+        prefixIcon: Icon(widget.icon, color: Colors.grey, size: 20),
+        // The eye icon appears only on password fields
+        suffixIcon: widget.obscureText
+            ? IconButton(
+                icon: Icon(
+                  _hidden
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined,
+                  color: Colors.grey,
+                  size: 20,
+                ),
+                onPressed: () => setState(() => _hidden = !_hidden),
+              )
+            : null,
         filled: true,
         fillColor: const Color(0xFFF5F5F7),
         contentPadding: const EdgeInsets.symmetric(vertical: 14),

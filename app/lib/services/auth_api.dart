@@ -6,12 +6,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthApi {
   // Deployed backend (used only when useLocal = false)
-  static const String baseUrl =
-      'https://image-processing-platform-iylj.onrender.com';
+  static const String baseUrl = 'https://image-processing-platform-iylj.onrender.com';
 
   // true  = DEMO mode: works inside the app, no server, OTP is always 123456
   // false = REAL mode: uses the backend and real email OTP
-  static bool useLocal = true;
+  static bool useLocal = false;
 
   static const String demoOtp = '123456';
 
