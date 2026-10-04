@@ -1,19 +1,6 @@
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 
-const transporter =
-    nodemailer.createTransport({
-        host: process.env.MAIL_HOST,
-        port: Number(
-            process.env.MAIL_PORT || 587
-        ),
-        secure:
-            process.env.MAIL_SECURE === "true",
-
-        auth: {
-            user: process.env.MAIL_USER,
-            pass: process.env.MAIL_PASSWORD
-        }
-    });
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const sendOtpEmail = async ({
     to,
@@ -24,43 +11,42 @@ const sendOtpEmail = async ({
     let subject;
     let heading;
     let description;
+
     if (purpose === "verify") {
-        subject =
-            "Verify your ImageRise account";
-        heading =
-            "Email Verification";
+        subject = "Verify your ImageRise account";
+        heading = "Email Verification";
         description =
             "Use the OTP below to verify your ImageRise account.";
     } else if (purpose === "reset") {
-        subject =
-            "Reset your ImageRise password";
-        heading =
-            "Password Reset";
+        subject = "Reset your ImageRise password";
+        heading = "Password Reset";
         description =
             "Use the OTP below to reset your ImageRise password.";
     } else {
-        throw new Error(
-            "Invalid email purpose"
-        );
+        throw new Error("Invalid email purpose");
     }
-    const mailOptions = {
-        from: `"ImageRise" <${process.env.MAIL_FROM}>`,
-        to,
+
+    const expires =
+        process.env.OTP_EXPIRES_MINUTES || 10;
+
+    const { data, error } = await resend.emails.send({
+        from: "ImageRise <onboarding@resend.dev>",
+        to: [to],
         subject,
         text: `
 Hello ${name},
+
 ${description}
+
 Your OTP is: ${otp}
-This OTP will expire in ${
-            process.env.OTP_EXPIRES_MINUTES || 10
-        } minutes.
+
+This OTP will expire in ${expires} minutes.
 
 If you did not request this, please ignore this email.
 
 Regards,
 ImageRise Team
         `,
-
         html: `
 <!DOCTYPE html>
 <html>
@@ -85,11 +71,11 @@ ImageRise Team
     ">
         ${otp}
     </div>
+
     <p>
-        This OTP will expire in
-        ${process.env.OTP_EXPIRES_MINUTES || 10}
-        minutes.
+        This OTP will expire in ${expires} minutes.
     </p>
+
     <p>
         If you did not request this, please ignore this email.
     </p>
@@ -102,12 +88,14 @@ ImageRise Team
 </body>
 </html>
         `
-    };
-    const info =
-        await transporter.sendMail(
-            mailOptions
-        );
-    return info;
+    });
+
+    if (error) {
+        console.error("Resend email error:", error);
+        throw new Error("Failed to send email");
+    }
+
+    return data;
 };
 
 module.exports = {
