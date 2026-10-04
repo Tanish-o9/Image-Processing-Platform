@@ -11,6 +11,7 @@ const {notFound,errorHandler} = require("./middleware/errormiddleware");
 
 
 const app = express();
+app.set("trust proxy", 1);
 // security
 app.use(helmet());
 // cors
