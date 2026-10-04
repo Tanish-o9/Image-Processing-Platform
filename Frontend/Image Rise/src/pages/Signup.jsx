@@ -35,7 +35,7 @@ function SignUp() {
     try {
 
       const response = await fetch(
-        "http://localhost:3000/api/auth/register",
+  `${import.meta.env.VITE_API_URL}/api/auth/register`,
         {
           method: "POST",
 
@@ -206,21 +206,6 @@ function SignUp() {
                   onChange={(event) => setConfirmPassword(event.target.value)}
                   className="w-full border border-gray-200 rounded-md px-3 py-2.5 text-xs outline-none focus:border-indigo-500"
                 />
-
-              </div>
-
-
-              <div className="flex items-center gap-2 mb-4">
-
-                <input
-                  type="checkbox"
-                  checked={terms}
-                  onChange={(event) => setTerms(event.target.checked)}
-                />
-
-                <p className="text-[9px] text-gray-500">
-                  I agree to the Terms & Conditions and Privacy Policy.
-                </p>
 
               </div>
 
