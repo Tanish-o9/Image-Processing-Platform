@@ -73,7 +73,7 @@ function Login() {
 
         <div className="flex items-center gap-2">
           <img
-            src="public\images\logo.png"
+            src="/images/logo.png"
             alt="Image Rise"
             className="w-8 h-8"
           />
@@ -100,7 +100,7 @@ function Login() {
           {/* Image */}
           <div className="hidden md:block w-1/2">
             <img
-              src="public\images\landing.png"
+              src="/images/landing.png"
               alt="Login"
               className="w-full max-w-md mx-auto"
             />
@@ -115,7 +115,7 @@ function Login() {
             </h1>
 
             <p className="text-[10px] text-gray-500 mt-1">
-              Sign in to continue to ImageForge
+              Sign in to continue to Image Rise
             </p>
 
 

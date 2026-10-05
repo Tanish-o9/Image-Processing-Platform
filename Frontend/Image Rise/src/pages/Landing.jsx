@@ -13,7 +13,7 @@ function Landing() {
         <div className="flex items-center gap-2">
 
           <img
-            src="public\images\logo.png"
+            src="/images/logo.png"
             alt="Image Rise"
             className="w-8 h-8"
           />
@@ -82,7 +82,7 @@ function Landing() {
             <div className="relative">
 
               <img
-                src="public\images\landing.png"
+                src="/images/landing.png"
                 alt="Image processing"
                 className="w-80 sm:w-96 md:w-[28rem]"
               />
